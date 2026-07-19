@@ -36,8 +36,8 @@ permissions:
 
 engine:
   id: codex
-  version: "0.144.1"
-  model: gpt-5.6-sol
+  version: "0.144.6"
+  model: gpt-5.6
 inlined-imports: true
 timeout-minutes: 45
 max-ai-credits: 600
