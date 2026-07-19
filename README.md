@@ -35,7 +35,7 @@ permissions:
 
 jobs:
   audit:
-    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.0.3
+    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.0.4
     with:
       project_context: >-
         Read and respect this repository's AGENTS.md, contribution guidance,
@@ -69,16 +69,18 @@ repositories, prefer an organization secret restricted to the intended callers.
 ### Maintenance
 
 Install GitHub's official compiler, edit the Markdown source, and regenerate the
-lock file:
+lock file. The current workflow requires `gh-aw` v0.82.13 or newer for GPT-5.6
+model metadata and firewall support:
 
 ```bash
-gh extension install github/gh-aw
+gh extension install github/gh-aw --pin v0.82.13
 gh aw compile weekly-codebase-audit --validate --actionlint
 ```
 
 Commit both files together:
 
 - `.github/workflows/weekly-codebase-audit.md` — human-authored source
+- `.github/workflows/shared/gpt-5.6-sol.md` — exact-model routing override
 - `.github/workflows/weekly-codebase-audit.lock.yml` — generated executable
 
 Release breaking changes under a new major version. Recompile after upgrading

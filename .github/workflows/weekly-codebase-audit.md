@@ -37,7 +37,15 @@ permissions:
 engine:
   id: codex
   version: "0.144.6"
-  model: gpt-5.6
+  model: gpt-5.6-sol
+# Prevent AWF family fallback from rewriting the explicit Sol variant.
+# Remove this workaround after github/gh-aw-firewall#6292 ships in the pinned release.
+sandbox:
+  agent:
+    id: awf
+    model-fallback: false
+imports:
+  - shared/gpt-5.6-sol.md
 inlined-imports: true
 timeout-minutes: 45
 max-ai-credits: 600
