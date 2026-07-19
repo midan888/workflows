@@ -36,6 +36,7 @@ permissions:
 
 engine:
   id: codex
+  version: "0.144.1"
   model: gpt-5.6-sol
 inlined-imports: true
 timeout-minutes: 45
