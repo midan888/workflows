@@ -33,9 +33,10 @@ permissions:
   pull-requests: read
   security-events: read
   vulnerability-alerts: read
-  copilot-requests: write
 
-engine: copilot
+engine:
+  id: codex
+  model: gpt-5.6-sol
 timeout-minutes: 45
 max-ai-credits: 600
 

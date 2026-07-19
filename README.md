@@ -32,11 +32,10 @@ permissions:
   pull-requests: read
   security-events: read
   vulnerability-alerts: read
-  copilot-requests: write
 
 jobs:
   audit:
-    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v1.0.0
+    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.0.0
     with:
       project_context: >-
         Read and respect this repository's AGENTS.md, contribution guidance,
@@ -46,14 +45,17 @@ jobs:
         deployment, dependencies, and documentation
       minimum_severity: medium
       max_findings: 10
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 Pin production callers to a release tag or full commit SHA. Do not reference
 `main`, because that would apply central workflow changes without an explicit
 consumer upgrade.
 
-The workflow uses GitHub Copilot inference through the caller's
-`copilot-requests: write` permission. It does not require a shared API key.
+The workflow uses OpenAI Codex with the explicit `gpt-5.6-sol` model. Every
+consuming repository must provide an `OPENAI_API_KEY` Actions secret. For several
+repositories, prefer an organization secret restricted to the intended callers.
 
 ### Inputs
 
