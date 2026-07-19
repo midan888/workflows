@@ -8,10 +8,11 @@ The reusable audit is authored as a
 [GitHub Agentic Workflow](https://github.github.com/gh-aw/) and compiled into a
 standard GitHub Actions reusable workflow.
 
-It performs a read-only repository review and can create at most one
-evidence-backed improvement issue per run. It cannot modify code, create pull
-requests, or close issues. No-op runs and infrastructure failures remain in the
-Actions run summary instead of creating noise issues.
+It performs a read-only repository review and can create up to 12 separate,
+evidence-backed improvement issues per run—one issue per independent root cause.
+It cannot modify code, create pull requests, or close issues. Exact issue titles
+are deduplicated, and no-op runs or infrastructure failures remain in the Actions
+run summary instead of creating noise issues.
 
 ### Use it from a project
 
@@ -35,7 +36,7 @@ permissions:
 
 jobs:
   audit:
-    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.0.4
+    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.1.0
     with:
       project_context: >-
         Read and respect this repository's AGENTS.md, contribution guidance,
@@ -64,7 +65,12 @@ repositories, prefer an organization secret restricted to the intended callers.
 | `project_context` | string | Read repository instructions | Supplies constraints the audit must respect |
 | `audit_focus` | string | Broad engineering review | Selects areas to prioritize |
 | `minimum_severity` | string | `medium` | Suppresses lower-value findings |
-| `max_findings` | number | `12` | Caps the consolidated issue size |
+| `max_findings` | number | `12` | Caps separate finding issues per run (hard limit 12) |
+
+The audit provides Go 1.25 and Node.js 24 to the isolated agent and permits
+repository-documented Go tests and npm checks. Other ecosystems remain available
+for source review but need a future runtime/tool addition before their build
+commands can execute.
 
 ### Maintenance
 
