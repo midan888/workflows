@@ -72,6 +72,7 @@ test('no findings writes only the honest coverage summary', async () => {
   assert.equal(h.calls.length, 0);
   assert.match(h.summaries[0], /Apple clients not inspected/);
   assert.match(h.summaries[0], /No qualifying findings/);
+  assert.match(h.summaries[0], /Model: anthropic\/claude-fable-5\.1 via OpenRouter \(max effort\)/);
 });
 test('creates one separate draft PR and only one Markdown file per finding', async () => {
   const h = harness([finding(), finding({ symbol: 'DeleteResource' })]); await h.run();
@@ -87,6 +88,7 @@ test('creates one separate draft PR and only one Markdown file per finding', asy
     }
     assert.match(args.tree[0].content, /status: backlog/);
     assert.match(args.tree[0].content, /were not executed/);
+    assert.match(args.tree[0].content, /source audit by Claude Fable 5\.1 through OpenRouter/);
     assert.ok(args.tree[0].content.includes(`/blob/${h.context.sha}/backend/auth.go#L2-L5`));
   }
   for (const { args } of h.calls.filter(x => x.name === 'pulls.create')) {
@@ -180,7 +182,9 @@ test('agent CLI receives a valid complete JSON schema matching publisher finding
 test('workflow enforces privilege separation and model/tool settings', () => {
   const [scan, publish] = workflow.split('\n  publish:\n');
   assert.match(scan, /contents: read/); assert.ok(!scan.includes('contents: write'));
-  assert.ok(scan.includes('--model z-ai/glm-5.3')); assert.ok(scan.includes('--effort max'));
+  assert.ok(scan.includes('--model anthropic/claude-fable-5.1')); assert.ok(scan.includes('--effort max'));
+  assert.ok(scan.includes('ANTHROPIC_CUSTOM_MODEL_OPTION: anthropic/claude-fable-5.1'));
+  assert.ok(scan.includes('ANTHROPIC_CUSTOM_MODEL_OPTION_SUPPORTED_CAPABILITIES: effort,xhigh_effort,max_effort,thinking,adaptive_thinking,interleaved_thinking'));
   assert.ok(scan.includes('--tools "Read,Glob,Grep"')); assert.ok(scan.includes('--strict-mcp-config'));
   assert.ok(scan.includes('--setting-sources ""')); assert.ok(scan.includes('"disableAllHooks": true'));
   assert.ok(!publish.includes('OPENROUTER_API_KEY')); assert.ok(!publish.includes('actions/checkout'));

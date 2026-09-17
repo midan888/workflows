@@ -78,13 +78,23 @@ same comment after each new PR commit instead of creating comment spam.
 ## Manual OpenRouter security audit
 
 `openrouter-security-audit.yml` scans the repository's default-branch snapshot
-using the same `OPENROUTER_API_KEY`, `z-ai/glm-5.3`, and max effort as the PR reviewer.
+using `anthropic/claude-fable-5.1` at max effort through OpenRouter. It reuses the
+PR reviewer's `OPENROUTER_API_KEY`; the PR reviewer remains on GLM 5.3.
 It opens one **draft, spec-only pull request per distinct vulnerability**, with the
 report in `specs/security/SEC-<fingerprint>.md`. It does not implement fixes.
 
 The scan has a 160-turn budget and a 60-minute timeout, with explicit instructions
 to reserve turns for its structured output. An initial real scan needed 80 turns,
 which exceeded the original 60-turn cap even though the model returned success.
+
+Claude subscription OAuth tokens are not OpenRouter credentials. Use OpenRouter
+credits or a provider API key through [BYOK](https://openrouter.ai/docs/guides/overview/auth/byok);
+Claude subscriptions do not pay for this API traffic. Set an appropriate OpenRouter
+credit limit before running the more expensive model. Fable 5.1 has
+[model-specific retention requirements](https://platform.claude.com/docs/en/models/fable-5-1/migration-guide)
+and may be unavailable under an account's data policies. Do not relax those policies
+automatically to make a scan run. Provider access and end-to-end behavior must be
+verified on the next operator-triggered scan; existing runs keep their old model.
 
 ```yaml
 name: OpenRouter Security Audit

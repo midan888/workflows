@@ -58,15 +58,15 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
 
-      - name: Scan repository with GLM 5.3
+      - name: Scan repository with Claude Fable 5.1
         id: claude
         uses: anthropics/claude-code-action@3b8197d3d486006dd4af54613517f21ac6ac625e # v1
         env:
           ANTHROPIC_BASE_URL: https://openrouter.ai/api
           ANTHROPIC_AUTH_TOKEN: ${{ secrets.OPENROUTER_API_KEY }}
-          ANTHROPIC_CUSTOM_MODEL_OPTION: z-ai/glm-5.3
-          ANTHROPIC_CUSTOM_MODEL_OPTION_NAME: GLM 5.3 via OpenRouter
-          ANTHROPIC_CUSTOM_MODEL_OPTION_SUPPORTED_CAPABILITIES: effort,max_effort
+          ANTHROPIC_CUSTOM_MODEL_OPTION: anthropic/claude-fable-5.1
+          ANTHROPIC_CUSTOM_MODEL_OPTION_NAME: Claude Fable 5.1 via OpenRouter
+          ANTHROPIC_CUSTOM_MODEL_OPTION_SUPPORTED_CAPABILITIES: effort,xhigh_effort,max_effort,thinking,adaptive_thinking,interleaved_thinking
         with:
           anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
           github_token: ${{ github.token }}
@@ -82,7 +82,7 @@ jobs:
             }
           claude_args: >-
             --max-turns 160
-            --model z-ai/glm-5.3
+            --model anthropic/claude-fable-5.1
             --effort max
             --setting-sources ""
             --strict-mcp-config
@@ -201,7 +201,7 @@ jobs:
             const findings = [...distinct.entries()]
               .sort((a, b) => severity.indexOf(b[1].severity) - severity.indexOf(a[1].severity)).slice(0, limit);
             const summary = [`## Security audit`, `Snapshot: \`${sha}\``,
-              `Model: z-ai/glm-5.3 via OpenRouter (max effort).`, md(report.coverage)];
+              `Model: anthropic/claude-fable-5.1 via OpenRouter (max effort).`, md(report.coverage)];
             if (findings.length === 0) {
               summary.push('No qualifying findings in the inspected scope; no pull requests created.');
               await core.summary.addRaw(summary.join('\n\n')).write();
@@ -258,7 +258,7 @@ jobs:
                 '## Acceptance criteria', ...f.acceptance.map(x => `- [ ] ${md(x).replace(/\r?\n/g, ' ')}`), '',
                 '## Verification', 'Reproduce locally, test the proposed regression checks, and run repository checks after remediation.', '',
                 '## Rollout', 'Confirm the finding and promote the remediation to the project specification lifecycle before implementing.', '',
-                '## Log', `- ${date} — backlog; source audit by GLM 5.3 through OpenRouter.`,
+                '## Log', `- ${date} — backlog; source audit by Claude Fable 5.1 through OpenRouter.`,
                 `[Audit run](${run})`, '',
               ].join('\n\n');
               // Recover a branch left by a prior PR API failure, but never alter or force-push it.
