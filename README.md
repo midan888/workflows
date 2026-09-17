@@ -36,7 +36,7 @@ permissions:
 
 jobs:
   audit:
-    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.1.0
+    uses: midan888/workflows/.github/workflows/weekly-codebase-audit.lock.yml@v2.1.1
     with:
       project_context: >-
         Read and respect this repository's AGENTS.md, contribution guidance,

@@ -54,7 +54,6 @@ max-ai-credits: 600
 # gateway that is attached to the isolated agent network.
 env:
   NO_PROXY: awmg-mcpg
-  no_proxy: awmg-mcpg
 
 network:
   allowed:
