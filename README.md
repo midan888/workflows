@@ -2,24 +2,23 @@
 
 Central, versioned GitHub workflows shared across `midan888` projects.
 
-## Codex pull request review
+## Claude pull request review
 
-`codex-pr-review.yml` runs a read-only Codex review for same-repository pull
-requests and creates or updates one persistent review comment. It authenticates
-ephemerally with a Codex personal access token, uses the official Codex GitHub
-Action, drops `sudo`, denies tool network access, and prevents shell commands
-from inheriting `CODEX_ACCESS_TOKEN`. It also marks the checkout untrusted and
-disables automatic `AGENTS.md` loading, so pull-request changes cannot inject
-higher-priority project configuration or instructions; Codex reads contributor
-guidance only as review evidence. The separate publishing job receives only the
-final review text and the repository-scoped `GITHUB_TOKEN`.
+`claude-pr-review.yml` runs a read-only Claude Code review for same-repository
+pull requests and creates or updates one persistent review comment. It uses the
+official Claude Code Action and authenticates with a Claude Code OAuth token
+generated from a Pro or Max subscription. The Claude job receives a read-only
+repository token and can only read and search files; shell commands, file edits,
+web access, subagents, and repository hooks are disabled. A separate publishing
+job receives only the structured review text and the repository-scoped
+`GITHUB_TOKEN`, never the Claude credential.
 
 ### Use it from a project
 
-Create `.github/workflows/codex-pr-review.yml` in the consuming repository:
+Create `.github/workflows/claude-pr-review.yml` in the consuming repository:
 
 ```yaml
-name: Codex PR Review
+name: Claude PR Review
 
 on:
   pull_request:
@@ -33,42 +32,38 @@ permissions:
 jobs:
   review:
     if: github.event.pull_request.draft == false
-    uses: midan888/workflows/.github/workflows/codex-pr-review.yml@v2.2.0
+    uses: midan888/workflows/.github/workflows/claude-pr-review.yml@v3.0.0
     with:
       review_instructions: >-
         Follow AGENTS.md. Prioritize user-visible regressions and violations of
         documented cross-platform invariants.
     secrets:
-      CODEX_ACCESS_TOKEN: ${{ secrets.CODEX_ACCESS_TOKEN }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 Pin production callers to a release tag or full commit SHA, not `main`. Store
-`CODEX_ACCESS_TOKEN` as an Actions secret in each repository, or as an
+`CLAUDE_CODE_OAUTH_TOKEN` as an Actions secret in each repository, or as an
 organization secret restricted to intended repositories.
 
-Create the token from the ChatGPT **Access tokens** page with the Codex scope
-and a finite expiry. Rotate it by creating a replacement, updating the Actions
-secret, smoke-testing a review, and revoking the old token. The workflow pins
-Codex CLI `0.145.0`; raise that pin when a newly created token requires a newer
-minimum CLI version.
+Generate the token locally with `claude setup-token` while signed into the
+intended Claude Pro or Max account. Copy it directly into the Actions secret;
+never commit it or print it in a workflow. Rotate it by generating a replacement,
+updating the secret, smoke-testing a review, and invalidating the old token.
 
 For security, fork pull requests are deliberately skipped: GitHub does not
 provide repository secrets to ordinary fork PR workflows, and using
 `pull_request_target` would expose the personal token while reviewing untrusted
-code. The official action also limits execution to repository writers by
-default. Use `allow_users` or `allow_bots` only for identities you trust.
+code. The official action also limits execution to repository writers by default
+and blocks bot actors unless explicitly allowed. This workflow does not weaken
+either restriction.
 
 ### Inputs
 
 | Input | Type | Default | Purpose |
 |---|---|---|---|
-| `model` | string | `gpt-5.6-sol` | Selects the Codex model |
-| `reasoning_effort` | string | `high` | Sets review reasoning effort |
 | `review_instructions` | string | Empty | Adds trusted repository-specific guidance |
-| `allow_users` | string | Empty | Adds trusted triggering users to the action allowlist |
-| `allow_bots` | boolean | `false` | Allows trusted bot-triggered runs |
 
-The required `CODEX_ACCESS_TOKEN` secret is available only to the read-only
+The required `CLAUDE_CODE_OAUTH_TOKEN` secret is available only to the read-only
 review job. The workflow supports `pull_request` callers only and updates the
 same comment after each new PR commit instead of creating comment spam.
 
