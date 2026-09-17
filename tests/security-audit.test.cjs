@@ -164,6 +164,19 @@ test('renders model HTML and external image markup as literal text', async () =>
   await h.run(); const body = h.calls.find(x => x.name === 'createTree').args.tree[0].content;
   assert.ok(!body.includes('<img')); assert.ok(!body.includes('![x]('));
 });
+test('agent CLI receives a valid complete JSON schema matching publisher findings', () => {
+  const match = workflow.match(/--json-schema '([^'\n]+)'/);
+  assert.ok(match, 'missing single-quoted schema argument');
+  const schema = JSON.parse(match[1]);
+  assert.deepEqual(schema.required, ['coverage', 'findings']);
+  assert.equal(schema.additionalProperties, false);
+  assert.equal(schema.properties.findings.maxItems, 12);
+  const item = schema.properties.findings.items;
+  assert.deepEqual([...item.required].sort(), Object.keys(finding()).sort());
+  assert.deepEqual(Object.keys(item.properties).sort(), Object.keys(finding()).sort());
+  assert.equal(item.additionalProperties, false);
+  assert.deepEqual(item.properties.severity.enum, ['low', 'medium', 'high', 'critical']);
+});
 test('workflow enforces privilege separation and model/tool settings', () => {
   const [scan, publish] = workflow.split('\n  publish:\n');
   assert.match(scan, /contents: read/); assert.ok(!scan.includes('contents: write'));
