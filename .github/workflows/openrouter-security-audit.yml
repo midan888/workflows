@@ -29,7 +29,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: read
     outputs:
@@ -81,7 +81,7 @@ jobs:
               }
             }
           claude_args: >-
-            --max-turns 60
+            --max-turns 160
             --model z-ai/glm-5.3
             --effort max
             --setting-sources ""
@@ -107,6 +107,11 @@ jobs:
             Report coverage, areas not inspected, and limitations candidly in coverage.
             An empty findings array means no qualifying finding in the inspected scope,
             not a claim the entire repository is secure. Keep total JSON below 60 KB.
+
+            You have a 160-turn hard budget. Batch related reads and searches, aim to
+            finish investigation within 120 turns, and reserve the remaining budget
+            to verify findings and emit the required structured JSON. Report any
+            unreviewed scope in coverage instead of exhausting the budget silently.
 
             For each finding supply a precise title, severity, CWE, actual tracked source
             path and line range, and the exact containing function/class/config key as symbol.

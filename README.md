@@ -17,6 +17,12 @@ Reviews are pinned to OpenRouter model `z-ai/glm-5.3` at the `max` effort level.
 Changing either setting is a versioned shared-workflow change rather than a
 per-repository input.
 
+The reviewer has a 120-turn budget and a 60-minute timeout. It reserves turns for
+the final structured review and must disclose any unreviewed scope. The previous
+20-turn cap was insufficient for larger cross-platform PRs and caused the publish
+job to be skipped. A fresh PR event using the new workflow pin is required to test
+an upgrade; rerunning an old check reuses its old workflow revision.
+
 ### Use it from a project
 
 Create `.github/workflows/openrouter-pr-review.yml` in the consuming repository:
@@ -75,6 +81,10 @@ same comment after each new PR commit instead of creating comment spam.
 using the same `OPENROUTER_API_KEY`, `z-ai/glm-5.3`, and max effort as the PR reviewer.
 It opens one **draft, spec-only pull request per distinct vulnerability**, with the
 report in `specs/security/SEC-<fingerprint>.md`. It does not implement fixes.
+
+The scan has a 160-turn budget and a 60-minute timeout, with explicit instructions
+to reserve turns for its structured output. An initial real scan needed 80 turns,
+which exceeded the original 60-turn cap even though the model returned success.
 
 ```yaml
 name: OpenRouter Security Audit
