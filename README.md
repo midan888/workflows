@@ -69,6 +69,87 @@ The required `OPENROUTER_API_KEY` secret is available only to the read-only
 review job. The workflow supports `pull_request` callers only and updates the
 same comment after each new PR commit instead of creating comment spam.
 
+## Manual OpenRouter security audit
+
+`openrouter-security-audit.yml` scans the repository's default-branch snapshot
+using the same `OPENROUTER_API_KEY`, `z-ai/glm-5.3`, and max effort as the PR reviewer.
+It opens one **draft, spec-only pull request per distinct vulnerability**, with the
+report in `specs/security/SEC-<fingerprint>.md`. It does not implement fixes.
+
+```yaml
+name: OpenRouter Security Audit
+on:
+  workflow_dispatch:
+    inputs:
+      minimum_severity:
+        type: choice
+        options: [low, medium, high, critical]
+        default: medium
+      max_findings:
+        type: number
+        default: 5
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  audit:
+    uses: midan888/workflows/.github/workflows/openrouter-security-audit.yml@FULL_COMMIT_SHA
+    with:
+      minimum_severity: ${{ inputs.minimum_severity }}
+      max_findings: ${{ inputs.max_findings }}
+      audit_instructions: >-
+        Prioritize authorization, privacy, and CI credential boundaries.
+    secrets:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+```
+
+Replace `FULL_COMMIT_SHA` with the published shared-workflow commit. Merge the
+caller into the consuming repository's default branch, then use **Actions →
+OpenRouter Security Audit → Run workflow**, selecting that branch. Other events
+and branches are rejected. There is no schedule or automatic scan on pushes.
+
+| Input | Default | Purpose |
+|---|---|---|
+| `audit_instructions` | Empty | Additional trusted project guidance |
+| `minimum_severity` | `medium` | `low`, `medium`, `high`, or `critical` |
+| `max_findings` | `5` | Maximum finding PRs, integer 1–12 |
+
+The scanner has a read-only GitHub token and file-reading/searching tools only.
+Repository settings, hooks, shell, writes, and MCP tools are disabled. A separate
+publisher job has no checkout or OpenRouter key; it validates structured output
+and source references, then creates single-file commits through the GitHub API.
+The finding spec records severity, CWE, evidence at the audited commit, attacker
+preconditions, impact, safe reproduction steps, proposed remediation, and acceptance
+checks. Reproduction is proposed, not executed. Treat every finding as a draft
+requiring human confirmation. The run summary states coverage and limitations;
+zero findings does not certify the repository as secure.
+
+Findings are fingerprinted by source path, CWE, and code symbol. Repeated root
+causes are skipped, including those with closed or merged PRs. This avoids reopening
+triaged findings, but renamed symbols/files or inconsistent model classification
+can still produce duplicates; later regressions of a previously reported identity
+need human triage. Existing finding branches from an interrupted run are reused
+only if their diff adds exactly the expected spec file. They are never overwritten.
+Separate reports under `specs/security/` avoid numbering conflicts with top-level
+feature specs; promote confirmed remediation to your project's usual lifecycle.
+
+Repository setup:
+
+- Reuse the `OPENROUTER_API_KEY` Actions secret. No additional provider credential.
+- Enable **Settings → Actions → General → Workflow permissions → Allow GitHub
+  Actions to create and approve pull requests**. The audit does not approve PRs.
+- The publisher needs `contents: write` and `pull-requests: write`; branch rules
+  must permit `codex/security-*`. It never writes to the default branch.
+- PRs created with `GITHUB_TOKEN` do not automatically run other Actions workflows.
+  Validate the spec manually before merging or explicitly trigger your checks.
+- Finding PRs inherit repository visibility: in public repositories, vulnerability
+  details are public. Use a private repository if findings require private triage.
+
+Maintainer checks: `node --test tests/security-audit.test.cjs` exercises the exact
+inline publisher with mocked GitHub APIs; run actionlint on the reusable workflow
+and each caller. An actual OpenRouter run is still needed to verify provider access
+and model behavior for a consuming repository.
+
 ## Weekly AI codebase audit
 
 The reusable audit is authored as a
