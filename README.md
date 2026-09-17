@@ -96,7 +96,7 @@ jobs:
     uses: midan888/workflows/.github/workflows/openrouter-security-audit.yml@FULL_COMMIT_SHA
     with:
       minimum_severity: ${{ inputs.minimum_severity }}
-      max_findings: ${{ inputs.max_findings }}
+      max_findings: ${{ fromJSON(format('{0}', inputs.max_findings)) }}
       audit_instructions: >-
         Prioritize authorization, privacy, and CI credential boundaries.
     secrets:
