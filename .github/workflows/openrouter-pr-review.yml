@@ -53,8 +53,10 @@ jobs:
         uses: anthropics/claude-code-action@3b8197d3d486006dd4af54613517f21ac6ac625e # v1
         env:
           ANTHROPIC_BASE_URL: https://openrouter.ai/api
-          ANTHROPIC_DEFAULT_OPUS_MODEL: z-ai/glm-5.3
-          ANTHROPIC_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES: effort,max_effort
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_CUSTOM_MODEL_OPTION: z-ai/glm-5.3
+          ANTHROPIC_CUSTOM_MODEL_OPTION_NAME: GLM 5.3 via OpenRouter
+          ANTHROPIC_CUSTOM_MODEL_OPTION_SUPPORTED_CAPABILITIES: effort,max_effort
         with:
           anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
           github_token: ${{ github.token }}
