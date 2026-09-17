@@ -75,6 +75,8 @@ jobs:
             }
           claude_args: >-
             --max-turns 20
+            --model claude-opus-5
+            --effort max
             --allowedTools "Read,Glob,Grep"
             --disallowedTools "Edit,Write,NotebookEdit,Bash,WebFetch,WebSearch,Task,Agent"
             --json-schema '{"type":"object","properties":{"review":{"type":"string","maxLength":60000}},"required":["review"],"additionalProperties":false}'

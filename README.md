@@ -13,6 +13,10 @@ web access, subagents, and repository hooks are disabled. A separate publishing
 job receives only the structured review text and the repository-scoped
 `GITHUB_TOKEN`, never the Claude credential.
 
+Reviews are pinned to `claude-opus-5` at the `max` effort level. This prioritizes
+review depth over latency and subscription usage; changing either setting is a
+versioned shared-workflow change rather than a per-repository input.
+
 ### Use it from a project
 
 Create `.github/workflows/claude-pr-review.yml` in the consuming repository:
