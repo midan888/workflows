@@ -60,7 +60,8 @@ function harness(findings = [], options = {}) {
   } };
   const summaries = [];
   const core = { summary: { addRaw: text => { summaries.push(text); return core.summary; }, write: async () => {} } };
-  const env = { AUDIT_RESULT: JSON.stringify({ coverage: 'Reviewed backend; Apple clients not inspected.', findings }),
+  const report = { coverage: 'Reviewed backend; Apple clients not inspected.', findings };
+  const env = { AUDIT_RESULT: JSON.stringify({ report_json: JSON.stringify(report) }),
     MAX_FINDINGS: '5', MINIMUM_SEVERITY: 'medium', ...options.env };
   return { calls, summaries, context, env,
     run: () => execute(require, github, context, core, { env }),
@@ -102,7 +103,9 @@ test('deduplicates the same root cause independent of line, title, and severity 
   await h.run(); assert.equal(h.calls.filter(x => x.name === 'pulls.create').length, 1);
   assert.match(h.calls.find(x => x.name === 'pulls.create').args.title, /critical/);
   const before = h.writes().length;
-  h.env.AUDIT_RESULT = JSON.stringify({ coverage: 'Second run', findings: [finding({ title: 'New title', start_line: 4 })] });
+  h.env.AUDIT_RESULT = JSON.stringify({ report_json: JSON.stringify({
+    coverage: 'Second run', findings: [finding({ title: 'New title', start_line: 4 })],
+  }) });
   await h.run(); assert.equal(h.writes().length, before);
 });
 test('never reopens closed or merged finding PRs', async () => {
@@ -128,8 +131,21 @@ test('rejects all malformed findings before any writes', async () => {
     const h = harness([finding(), bad]); await assert.rejects(h.run()); assert.equal(h.writes().length, 0);
   }
 });
-test('rejects absent, corrupt, and oversized model output', async () => {
-  for (const raw of ['', 'not JSON', '{}', 'null', 'x'.repeat(60001)]) {
+test('rejects absent, corrupt, and malformed model output envelopes', async () => {
+  for (const raw of ['', 'not JSON', '{}', 'null', 'x'.repeat(120001),
+    JSON.stringify({ report_json: '{}', extra: true }),
+    JSON.stringify({ report_json: 42 }), JSON.stringify({ report_json: 'not JSON' })]) {
+    const h = harness([], { env: { AUDIT_RESULT: raw } });
+    await assert.rejects(h.run()); assert.equal(h.writes().length, 0);
+  }
+});
+test('rejects oversized decoded reports and extra inner properties', async () => {
+  for (const report of [
+    { coverage: 'x'.repeat(60001), findings: [] },
+    { coverage: 'Reviewed backend.', findings: [], injected: true },
+    { coverage: 'Reviewed backend.', findings: [finding({ injected: true })] },
+  ]) {
+    const raw = JSON.stringify({ report_json: JSON.stringify(report) });
     const h = harness([], { env: { AUDIT_RESULT: raw } });
     await assert.rejects(h.run()); assert.equal(h.writes().length, 0);
   }
@@ -166,18 +182,15 @@ test('renders model HTML and external image markup as literal text', async () =>
   await h.run(); const body = h.calls.find(x => x.name === 'createTree').args.tree[0].content;
   assert.ok(!body.includes('<img')); assert.ok(!body.includes('![x]('));
 });
-test('agent CLI receives a valid complete JSON schema matching publisher findings', () => {
+test('agent CLI uses a minimal string envelope and leaves full validation to the publisher', () => {
   const match = workflow.match(/--json-schema '([^'\n]+)'/);
   assert.ok(match, 'missing single-quoted schema argument');
   const schema = JSON.parse(match[1]);
-  assert.deepEqual(schema.required, ['coverage', 'findings']);
+  assert.deepEqual(schema.required, ['report_json']);
   assert.equal(schema.additionalProperties, false);
-  assert.equal(schema.properties.findings.maxItems, 12);
-  const item = schema.properties.findings.items;
-  assert.deepEqual([...item.required].sort(), Object.keys(finding()).sort());
-  assert.deepEqual(Object.keys(item.properties).sort(), Object.keys(finding()).sort());
-  assert.equal(item.additionalProperties, false);
-  assert.deepEqual(item.properties.severity.enum, ['low', 'medium', 'high', 'critical']);
+  assert.deepEqual(Object.keys(schema.properties), ['report_json']);
+  assert.deepEqual(schema.properties.report_json, { type: 'string' });
+  assert.match(workflow, /publisher independently parses and\n\s+validates every field/);
 });
 test('workflow enforces privilege separation and model/tool settings', () => {
   const [scan, publish] = workflow.split('\n  publish:\n');

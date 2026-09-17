@@ -86,6 +86,13 @@ report in `specs/security/SEC-<fingerprint>.md`. It does not implement fixes.
 The scan has a 160-turn budget and a 60-minute timeout, with explicit instructions
 to reserve turns for its structured output. An initial real scan needed 80 turns,
 which exceeded the original 60-turn cap even though the model returned success.
+The Claude Code outer structured-output schema deliberately contains only one
+string field, `report_json`. Fable serializes the complete audit object into that
+field, and the isolated publisher parses and validates the inner object before any
+GitHub write. This avoids a Claude Code failure mode where complex schemas with a
+narrative string plus a nested findings array can finish successfully without
+returning `structured_output`; simplifying the outer schema does not relax the
+publisher's field, size, path, line, or source-snapshot validation.
 
 Claude subscription OAuth tokens are not OpenRouter credentials. Use OpenRouter
 credits or a provider API key through [BYOK](https://openrouter.ai/docs/guides/overview/auth/byok);
