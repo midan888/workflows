@@ -1,4 +1,4 @@
-name: Reusable Claude PR Review
+name: Reusable OpenRouter PR Review
 
 on:
   workflow_call:
@@ -9,14 +9,14 @@ on:
         type: string
         default: ""
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN:
-        description: Claude Code OAuth token generated with claude setup-token.
+      OPENROUTER_API_KEY:
+        description: OpenRouter API key used by the Claude Code review harness.
         required: true
 
 permissions: {}
 
 concurrency:
-  group: claude-pr-review-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}
+  group: openrouter-pr-review-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -48,11 +48,15 @@ jobs:
           git diff --no-ext-diff --no-textconv --find-renames \
             "$BASE_SHA" "$HEAD_SHA" -- > .claude-review/pr.diff
 
-      - name: Review pull request with Claude Code
+      - name: Review pull request with GLM 5.3
         id: claude
         uses: anthropics/claude-code-action@3b8197d3d486006dd4af54613517f21ac6ac625e # v1
+        env:
+          ANTHROPIC_BASE_URL: https://openrouter.ai/api
+          ANTHROPIC_DEFAULT_OPUS_MODEL: z-ai/glm-5.3
+          ANTHROPIC_DEFAULT_OPUS_MODEL_SUPPORTED_CAPABILITIES: effort,max_effort
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
           github_token: ${{ github.token }}
           show_full_output: false
           display_report: false
@@ -75,7 +79,7 @@ jobs:
             }
           claude_args: >-
             --max-turns 20
-            --model claude-opus-5
+            --model z-ai/glm-5.3
             --effort max
             --allowedTools "Read,Glob,Grep"
             --disallowedTools "Edit,Write,NotebookEdit,Bash,WebFetch,WebSearch,Task,Agent"
@@ -122,16 +126,16 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - name: Create or update Claude review comment
+      - name: Create or update GLM 5.3 review comment
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          CLAUDE_STRUCTURED_REVIEW: ${{ needs.review.outputs.structured_review }}
+          MODEL_STRUCTURED_REVIEW: ${{ needs.review.outputs.structured_review }}
           REVIEWED_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           github-token: ${{ github.token }}
           script: |
             const marker = '<!-- reusable-claude-pr-review -->';
-            const parsed = JSON.parse(process.env.CLAUDE_STRUCTURED_REVIEW || '{}');
+            const parsed = JSON.parse(process.env.MODEL_STRUCTURED_REVIEW || '{}');
             if (typeof parsed.review !== 'string' || parsed.review.trim() === '') {
               core.setFailed('Claude returned no review text.');
               return;
@@ -143,7 +147,7 @@ jobs:
             const review = parsed.review.length > available
               ? parsed.review.slice(0, available) + '\n\n_Review truncated to fit GitHub comment limits._'
               : parsed.review;
-            const body = `${marker}\n## Claude review\n\n${review}${suffix}`;
+            const body = `${marker}\n## GLM 5.3 review\n\n${review}${suffix}`;
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,

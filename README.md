@@ -2,27 +2,27 @@
 
 Central, versioned GitHub workflows shared across `midan888` projects.
 
-## Claude pull request review
+## OpenRouter pull request review
 
-`claude-pr-review.yml` runs a read-only Claude Code review for same-repository
+`openrouter-pr-review.yml` runs a read-only GLM 5.3 review for same-repository
 pull requests and creates or updates one persistent review comment. It uses the
-official Claude Code Action and authenticates with a Claude Code OAuth token
-generated from a Pro or Max subscription. The Claude job receives a read-only
-repository token and can only read and search files; shell commands, file edits,
-web access, subagents, and repository hooks are disabled. A separate publishing
-job receives only the structured review text and the repository-scoped
-`GITHUB_TOKEN`, never the Claude credential.
+official Claude Code Action as the agent harness and sends its Anthropic-compatible
+API traffic to OpenRouter. The review job receives a read-only repository token
+and can only read and search files; shell commands, file edits, web access,
+subagents, and repository hooks are disabled. A separate publishing job receives
+only the structured review text and the repository-scoped `GITHUB_TOKEN`, never
+the OpenRouter credential.
 
-Reviews are pinned to `claude-opus-5` at the `max` effort level. This prioritizes
-review depth over latency and subscription usage; changing either setting is a
-versioned shared-workflow change rather than a per-repository input.
+Reviews are pinned to OpenRouter model `z-ai/glm-5.3` at the `max` effort level.
+Changing either setting is a versioned shared-workflow change rather than a
+per-repository input.
 
 ### Use it from a project
 
-Create `.github/workflows/claude-pr-review.yml` in the consuming repository:
+Create `.github/workflows/openrouter-pr-review.yml` in the consuming repository:
 
 ```yaml
-name: Claude PR Review
+name: OpenRouter PR Review
 
 on:
   pull_request:
@@ -36,27 +36,25 @@ permissions:
 jobs:
   review:
     if: github.event.pull_request.draft == false
-    uses: midan888/workflows/.github/workflows/claude-pr-review.yml@v3.0.0
+    uses: midan888/workflows/.github/workflows/openrouter-pr-review.yml@v4.0.0
     with:
       review_instructions: >-
         Follow AGENTS.md. Prioritize user-visible regressions and violations of
         documented cross-platform invariants.
     secrets:
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
-Pin production callers to a release tag or full commit SHA, not `main`. Store
-`CLAUDE_CODE_OAUTH_TOKEN` as an Actions secret in each repository, or as an
-organization secret restricted to intended repositories.
-
-Generate the token locally with `claude setup-token` while signed into the
-intended Claude Pro or Max account. Copy it directly into the Actions secret;
-never commit it or print it in a workflow. Rotate it by generating a replacement,
-updating the secret, smoke-testing a review, and invalidating the old token.
+Pin production callers to a release tag or full commit SHA, not `main`. Create
+an API key in OpenRouter, give it an appropriate credit limit, and store it as
+the `OPENROUTER_API_KEY` Actions secret in each repository or as an organization
+secret restricted to intended repositories. Never commit or print the key.
+Rotate it by creating a replacement, updating the secret, smoke-testing a review,
+and deleting the old key.
 
 For security, fork pull requests are deliberately skipped: GitHub does not
 provide repository secrets to ordinary fork PR workflows, and using
-`pull_request_target` would expose the personal token while reviewing untrusted
+`pull_request_target` would expose the API key while reviewing untrusted
 code. The official action also limits execution to repository writers by default
 and blocks bot actors unless explicitly allowed. This workflow does not weaken
 either restriction.
@@ -67,7 +65,7 @@ either restriction.
 |---|---|---|---|
 | `review_instructions` | string | Empty | Adds trusted repository-specific guidance |
 
-The required `CLAUDE_CODE_OAUTH_TOKEN` secret is available only to the read-only
+The required `OPENROUTER_API_KEY` secret is available only to the read-only
 review job. The workflow supports `pull_request` callers only and updates the
 same comment after each new PR commit instead of creating comment spam.
 
